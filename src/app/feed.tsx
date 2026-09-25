@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const formatDuration = (totalSeconds: number) => {
   const hours = Math.floor(totalSeconds / 3600);
@@ -15,7 +16,7 @@ const formatDuration = (totalSeconds: number) => {
 
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
     2,
-    "0"
+    "0",
   )}:${String(seconds).padStart(2, "0")}`;
 };
 
@@ -30,14 +31,61 @@ export default function FeedScreen() {
   const isDark = colorScheme === "dark";
 
   const [feeds, setFeeds] = useState<Feed[]>([]);
+  const [hasLoadedFeeds, setHasLoadedFeeds] = useState(false);
   const [feedStartTime, setFeedStartTime] = useState<Date | null>(null);
 
   const [isFeeding, setIsFeeding] = useState(false);
-  const [activeSide, setActiveSide] = useState<
-    "Left" | "Right" | null
-  >(null);
+  const [activeSide, setActiveSide] = useState<"Left" | "Right" | null>(null);
   const [leftSeconds, setLeftSeconds] = useState(0);
   const [rightSeconds, setRightSeconds] = useState(0);
+
+  useEffect(() => {
+    const loadFeeds = async () => {
+      try {
+        const storedFeeds = await AsyncStorage.getItem("babsy-feeds");
+
+        if (!storedFeeds) {
+          setHasLoadedFeeds(true);
+          return;
+        }
+
+        const parsedFeeds = JSON.parse(storedFeeds);
+
+        const restoredFeeds: Feed[] = parsedFeeds.map(
+          (feed: {
+            startTime: string;
+            leftSeconds: number;
+            rightSeconds: number;
+          }) => ({
+            ...feed,
+            startTime: new Date(feed.startTime),
+          }),
+        );
+
+        setFeeds(restoredFeeds);
+        setHasLoadedFeeds(true);
+      } catch (error) {
+        console.error("Failed to load feeds:", error);
+        setHasLoadedFeeds(true);
+      }
+    };
+
+    loadFeeds();
+  }, []);
+
+    useEffect(() => {
+    if (!hasLoadedFeeds) return;
+
+    const saveFeeds = async () => {
+      try {
+        await AsyncStorage.setItem("babsy-feeds", JSON.stringify(feeds));
+      } catch (error) {
+        console.error("Failed to save feeds:", error);
+      }
+    };
+
+    saveFeeds();
+  }, [feeds, hasLoadedFeeds]);
 
   useEffect(() => {
     if (!isFeeding) return;
@@ -77,10 +125,7 @@ export default function FeedScreen() {
 
   return (
     <SafeAreaView
-      style={[
-        styles.container,
-        { backgroundColor: isDark ? "#000" : "#fff" },
-      ]}
+      style={[styles.container, { backgroundColor: isDark ? "#000" : "#fff" }]}
     >
       <View style={styles.content}>
         <Text style={[styles.title, { color: isDark ? "#fff" : "#000" }]}>
@@ -89,35 +134,24 @@ export default function FeedScreen() {
 
         {isFeeding && (
           <>
-            <Text
-              style={[styles.timer, { color: isDark ? "#fff" : "#000" }]}
-            >
+            <Text style={[styles.timer, { color: isDark ? "#fff" : "#000" }]}>
               {formatDuration(leftSeconds + rightSeconds)}
             </Text>
 
             <Text
-              style={[
-                styles.breastTimer,
-                { color: isDark ? "#fff" : "#000" },
-              ]}
+              style={[styles.breastTimer, { color: isDark ? "#fff" : "#000" }]}
             >
               Left: {formatDuration(leftSeconds)}
             </Text>
 
             <Text
-              style={[
-                styles.breastTimer,
-                { color: isDark ? "#fff" : "#000" },
-              ]}
+              style={[styles.breastTimer, { color: isDark ? "#fff" : "#000" }]}
             >
               Right: {formatDuration(rightSeconds)}
             </Text>
 
             <Text
-              style={[
-                styles.activeSide,
-                { color: isDark ? "#fff" : "#000" },
-              ]}
+              style={[styles.activeSide, { color: isDark ? "#fff" : "#000" }]}
             >
               {activeSide ? `${activeSide} breast` : "Select a breast"}
             </Text>
@@ -164,40 +198,28 @@ export default function FeedScreen() {
           feeds.map((feed, index) => (
             <View key={index} style={styles.feedRow}>
               <Text
-                style={[
-                  styles.feedTime,
-                  { color: isDark ? "#fff" : "#000" },
-                ]}
+                style={[styles.feedTime, { color: isDark ? "#fff" : "#000" }]}
               >
                 {`${String(feed.startTime.getHours()).padStart(
                   2,
-                  "0"
+                  "0",
                 )}:${String(feed.startTime.getMinutes()).padStart(2, "0")}`}
               </Text>
 
               <Text
-                style={[
-                  styles.feedType,
-                  { color: isDark ? "#aaa" : "#666" },
-                ]}
+                style={[styles.feedType, { color: isDark ? "#aaa" : "#666" }]}
               >
                 Breastfeed
               </Text>
 
               <Text
-                style={[
-                  styles.feedType,
-                  { color: isDark ? "#aaa" : "#666" },
-                ]}
+                style={[styles.feedType, { color: isDark ? "#aaa" : "#666" }]}
               >
                 Total: {formatDuration(feed.leftSeconds + feed.rightSeconds)}
               </Text>
 
               <Text
-                style={[
-                  styles.feedType,
-                  { color: isDark ? "#aaa" : "#666" },
-                ]}
+                style={[styles.feedType, { color: isDark ? "#aaa" : "#666" }]}
               >
                 Left: {formatDuration(feed.leftSeconds)} · Right:{" "}
                 {formatDuration(feed.rightSeconds)}
