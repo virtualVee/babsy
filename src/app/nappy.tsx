@@ -1,10 +1,33 @@
-import { Text, View, useColorScheme, Pressable, TextInput } from "react-native";
+import {
+  Text,
+  View,
+  ScrollView,
+  useColorScheme,
+  Pressable,
+  TextInput,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { nappyStyles } from "../styles/nappyStyles";
 
 type Texture = "Solid" | "Mushy" | "Runny";
 type Colour = "Brown" | "Green" | "Yellow" | "Black" | "Red" | "Grey" | "Other";
+
+const textureEmojis: Record<Texture, string> = {
+  Solid: "💩",
+  Mushy: "🫟",
+  Runny: "💦",
+};
+
+const colourEmojis: Record<Colour, string> = {
+  Brown: "🟤",
+  Green: "🟢",
+  Yellow: "🟡",
+  Black: "⚫",
+  Red: "🔴",
+  Grey: "⚪",
+  Other: "❓",
+};
 
 type NappyRecord = {
   id: string;
@@ -123,7 +146,11 @@ export default function NappyScreen() {
         { backgroundColor: isDark ? "#000" : "#fff" },
       ]}
     >
-      <View style={nappyStyles.content}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[nappyStyles.content, { paddingBottom: 40 }]}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={[nappyStyles.title, { color: isDark ? "#fff" : "#000" }]}>
           Nappy
         </Text>
@@ -152,7 +179,7 @@ export default function NappyScreen() {
                 dry && { textDecorationLine: "line-through" },
               ]}
             >
-              Wet
+              💧 Wet
             </Text>
           </Pressable>
 
@@ -173,7 +200,7 @@ export default function NappyScreen() {
                 dry && { textDecorationLine: "line-through" },
               ]}
             >
-              Dirty
+              🧻 Dirty
             </Text>
           </Pressable>
 
@@ -194,7 +221,7 @@ export default function NappyScreen() {
                 (wet || dirty) && { textDecorationLine: "line-through" },
               ]}
             >
-              Dry
+              🌵 Dry
             </Text>
           </Pressable>
         </View>
@@ -218,7 +245,9 @@ export default function NappyScreen() {
                   ]}
                   onPress={() => toggleTexture(option)}
                 >
-                  <Text style={nappyStyles.buttonText}>{option}</Text>
+                  <Text style={nappyStyles.buttonText}>
+                    {textureEmojis[option]} {option}
+                  </Text>
                 </Pressable>
               ))}
             </View>
@@ -250,7 +279,9 @@ export default function NappyScreen() {
                   ]}
                   onPress={() => toggleColour(option)}
                 >
-                  <Text style={nappyStyles.buttonText}>{option}</Text>
+                  <Text style={nappyStyles.buttonText}>
+                    {colourEmojis[option]} {option}
+                  </Text>
                 </Pressable>
               ))}
             </View>
@@ -258,7 +289,7 @@ export default function NappyScreen() {
             <Text
               style={[nappyStyles.heading, { color: isDark ? "#fff" : "#000" }]}
             >
-              Notes
+              📝 Notes
             </Text>
 
             <TextInput
@@ -299,7 +330,7 @@ export default function NappyScreen() {
             </View>
           ))
         )}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
